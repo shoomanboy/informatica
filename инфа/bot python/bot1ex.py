@@ -6,7 +6,8 @@ from telegram.ext import MessageHandler, CommandHandler, ConversationHandler, Re
 from telegram import KeyboardButton, ChatMember, Chat, Contact
 from telegram import ReplyKeyboardMarkup
 from telegram import ReplyKeyboardRemove
-
+import googletrans
+from googletrans import Translator
 # update.message.text-сообщение введеное человеком боту
 # update.message.reply_text-сообщение выведеное на экран
 # reply_markup-Встроенная клавиатура, прикрепленная к сообщению.
@@ -14,67 +15,63 @@ from telegram import ReplyKeyboardRemove
 slovo = 0
 button_stop = '/stop'  # кнопка stop
 button_help = '/help'  # кнопка help
-button_start = '/start'  # кнопка start
+button_start = '/translate'  # кнопка start
 button_end = '/end'  # кнопка end
 slovar_rus = []  # массив запоминающий введеные русские слова после /start
 slovar_eng = []  # массив запоминающий перевод слов
 
 
+
+def message_handler(update: Update, context: CallbackContext):
+    my_keyboard = ReplyKeyboardMarkup([[button_start], [button_help],[button_end]])
+    update.message.reply_text(
+        text="Привет %s, давай общаться! \n Нажми на одну из кнопок. \n Кнопка '/translate' запустит переводчик\n Кнопка '/help' подскажет тебе что делать\n Кнопка '/end' завершит работу" %(format(update.message.chat.first_name)),
+        reply_markup=my_keyboard
+    )
+
+
+
 def delete_button(update: Update, context: CallbackContext):  # удаление кнопки после того как на нее нажали
     update.message.reply_text(
         text=context,
-        reply_markup=ReplyKeyboardRemove(),
-    )
-
-
-def message_handler(update: Update, context: CallbackContext):  # ф-я принимает сбщ. и отв на него арг-update
-    text = update.message.reply_text
-    global slovo
-    slovo = update.message.text
-    if update.message.text == '/start':
-        return update.message.reply_text(
-            text='Начинаем!!!!!',
-        )
-    if update.message.text == '/help':
-        return delete_button(update=update,
-                             context='Привет.Пока я знаю только команды:/help, /start, /end . \n Напиши одну из этих команд!')
-    if update.message.text == '/end':
-        return delete_button(update=update, context='Жаль что ты уходишь, до скорой встречи!')
-    reply_markup = ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=button_start),
-                KeyboardButton(text=button_help),
-                KeyboardButton(text=button_end),
-            ],
-        ],
-        resize_keyboard=True,
-    )
-    update.message.reply_text(
-        text='Привет %s,я Телеграм бот,пока я только учусь,и вот список команд которые я пока могу выполнять: \n /start\n /help\n /end'%(format(update.message.chat.first_name)),
-        reply_markup=reply_markup
+        reply_markup=ReplyKeyboardRemove()
     )
     #  переход к основной части работы бота
 
 
-def main_part(update: Update):
-    while update.message.text!='/stop':
-        global slovar_rus
-        global slovar_eng
-        slovar_rus.append(update.message.text)
-        if update.message.text == '/stop':
-            for i, item in enumerate(slovar_rus):
-                b = item
-                if b == '/stop':
-                    break
-                update.message.reply_text(
-                    text=b
-                )
-            update.message.reply_text(
-                text='Ты молодец!!!',
-            )
+def main_part(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        text='Translator\n Введите слово',
+        reply_markup=ReplyKeyboardRemove(),
+    )
+    global slovar_rus
+    global slovar_eng
+    return"stop"
+
+def message_stop(update: Update, context: CallbackContext):
+    my_keyboard = ReplyKeyboardMarkup([[button_start], [button_help],[button_end]])
+    translator = Translator()
+    slovo=update.message.text
+    perevod=translator.translate(slovo)
+    update.message.reply_text(text='%s-%s'%(slovo,perevod.text),reply_markup=my_keyboard)
+    update.message.reply_text(text='Выбери команду')
+    return "menu"
 
 
+
+def message_end(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        text='До скорой встречи\n Надеюсь ты все запомнил!',
+        reply_markup=ReplyKeyboardRemove(),
+    )
+
+
+def message_help(update: Update, context: CallbackContext):
+    my_keyboard = ReplyKeyboardMarkup([[button_start], [button_help], [button_end]])
+    update.message.reply_text(
+        text="Я знаю пока три команды:'перевод', '/help', '/end'",
+        reply_markup=my_keyboard
+    )
 
 
 def main():
@@ -83,9 +80,18 @@ def main():
         token='1393900687:AAFRG_hsPUBotc3VJF8Zsevz9iehRh-PDIY',
         use_context=True,
     )
-    updater.dispatcher.add_handler(MessageHandler(Filters.all,message_handler))
-    updater.dispatcher.add_handler(MessageHandler(Filters.regex('/start'),main_part))
-    updater.dispatcher.add_handler(MessageHandler(Filters.regex('/stop'),message_handler))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex('start|/start|привет|Привет|Start'),message_handler))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex('/help'), message_help))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex('/end'), message_end))
+    updater.dispatcher.add_handler(
+        ConversationHandler(entry_points=[MessageHandler(Filters.regex('/translate'), main_part)],
+                            states={
+                                "stop":[MessageHandler(Filters.all,message_stop)],
+                                "menu":[MessageHandler(Filters.all,message_handler)]
+                            },
+                            fallbacks=[]
+                            )
+    )
     updater.start_polling()
     updater.idle()
 
