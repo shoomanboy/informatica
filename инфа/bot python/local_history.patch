@@ -1,0 +1,246 @@
+Index: bot1ex.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- bot1ex.py	(date 1602148147696)
++++ bot1ex.py	(date 1602148147696)
+@@ -8,88 +8,200 @@
+ from telegram import ReplyKeyboardRemove
+ import googletrans
+ from googletrans import Translator
++
+ # update.message.text-сообщение введеное человеком боту
+ # update.message.reply_text-сообщение выведеное на экран
+ # reply_markup-Встроенная клавиатура, прикрепленная к сообщению.
+ #
+-slovo = 0
+-button_stop = '/stop'  # кнопка stop
++start_commands='start|/start|привет|Привет'
++slovo = 0  # переменная в которую будет сохраняться введеное предложение
+ button_help = '/help'  # кнопка help
+ button_start = '/translate'  # кнопка start
++button_start_again = '/translate_again'
+ button_end = '/end'  # кнопка end
++button_anketa = '/Заполнить анкету'
++show_anketa='Показать анкету'
++button_menu='/menu'
+ slovar_rus = []  # массив запоминающий введеные русские слова после /start
+ slovar_eng = []  # массив запоминающий перевод слов
++full_name ='мама'  # переменная в которую будет сохраняться ФИО пользователя
++phone_number ='папа'
++mail_name = 'сын шлюхи'
++level = 'я даун'
++comment = 'это просто пиздец'
+ 
+ 
+-
+-def message_handler(update: Update, context: CallbackContext):
+-    my_keyboard = ReplyKeyboardMarkup([[button_start], [button_help],[button_end]])
++def message_handler(update: Update, context: CallbackContext):  # Запуск бота,самый первый шаг
++    my_keyboard=ReplyKeyboardMarkup([[button_start,button_anketa],[button_end,button_menu],[button_help,show_anketa]])
+     update.message.reply_text(
+-        text="Привет %s, давай общаться! \n Нажми на одну из кнопок. \n Кнопка '/translate' запустит переводчик\n Кнопка '/help' подскажет тебе что делать\n Кнопка '/end' завершит работу" %(format(update.message.chat.first_name)),
++        text="Привет %s, давай общаться! \n Нажми на одну из кнопок." % (
++            format(update.message.chat.first_name)),
+         reply_markup=my_keyboard
+     )
+-
++    return "spisok comand"
+ 
++def dontknow(update: Update,
++             context: CallbackContext):  # Если непривально введена команда,то будет отправляться пользователю данная команда
++    update.message.reply_text(text='Я вас не понимаю,нажмите на команду')
+ 
+-def delete_button(update: Update, context: CallbackContext):  # удаление кнопки после того как на нее нажали
+-    update.message.reply_text(
+-        text=context,
+-        reply_markup=ReplyKeyboardRemove()
+-    )
+-    #  переход к основной части работы бота
+ 
+-
+-def main_part(update: Update, context: CallbackContext):
++def main_part(update: Update,
++              context: CallbackContext):  # После нажатия кнопки /translate запускается диалог с переводчиком
+     update.message.reply_text(
+         text='Translator\n Введите слово',
+         reply_markup=ReplyKeyboardRemove(),
+     )
++    global slovo
+     global slovar_rus
+     global slovar_eng
+-    return"stop"
++    return "message stop"
+ 
+-def message_stop(update: Update, context: CallbackContext):
+-    my_keyboard = ReplyKeyboardMarkup([[button_start], [button_help],[button_end]])
++
++def message_stop(update: Update,
++                 context: CallbackContext):  # Здесь обрабатывается полученное сообщение,слово переводится и отправляется пользователю
+     translator = Translator()
+-    slovo=update.message.text
+-    perevod=translator.translate(slovo)
+-    update.message.reply_text(text='%s-%s'%(slovo,perevod.text),reply_markup=my_keyboard)
+-    update.message.reply_text(text='Выбери команду')
+-    return "menu"
++    slovo = update.message.text
++    perevod = translator.translate(slovo)
++    update.message.reply_text(text="Перевод'%s'-'%s'\n" % (slovo, perevod.text))
++    my_keyboard=ReplyKeyboardMarkup([[button_start,button_anketa],[button_end,button_menu],[button_help,show_anketa]])
++    update.message.reply_text(text='выбери команду', reply_markup=my_keyboard)
++    return "spisok comand"
+ 
+ 
+ 
+-def message_end(update: Update, context: CallbackContext):
++
++def message_end(update: Update, context: CallbackContext):  # Заканчиваем диалог с ботом по команде /end
+     update.message.reply_text(
+-        text='До скорой встречи\n Надеюсь ты все запомнил!',
++        text='До скорой встречи\n Надеюсь ты все запомнил!\nЕсли захочешь пообщаться, то напиши команду /start',
+         reply_markup=ReplyKeyboardRemove(),
+     )
++    return ConversationHandler.END
++
++def message_help(update: Update,
++                 context: CallbackContext):  # Пользователю высвечиивается список доступных команд по нажатию кнопки /help
++    my_keyboard = ReplyKeyboardMarkup([[button_start_again,button_anketa],[button_end,button_menu],[button_help]])
++    update.message.reply_text(text="Я знаю пока команды:'/translate','/Заполнить анкету','/end','/menu','/help',Показать анкету",
++                              reply_markup=my_keyboard)
++
++
++def spisok_knopok(update:Update,context:CallbackContext):
++    my_keyboard=ReplyKeyboardMarkup([[button_start_again,button_anketa],[button_end,button_menu],[button_help,show_anketa]])
++    update.message.reply_text(text='Вы сейчас в главном меню.\nВыберете одну из команд:',reply_markup=my_keyboard)
+ 
+ 
+-def message_help(update: Update, context: CallbackContext):
+-    my_keyboard = ReplyKeyboardMarkup([[button_start], [button_help], [button_end]])
++
++
++
++
++
++def spisok_comand(update:Update,context:CallbackContext):# Полный список команд по завершению какого-то цикла
++    my_keyboard=ReplyKeyboardMarkup([[button_start,button_anketa],[button_end,button_menu],[button_help,show_anketa]])
++    if update.message.text == show_anketa:
++        return anketa_text(update=update,context=context)
++    if update.message.text == button_help:
++        return message_help(update=update,context=context)
++    if update.message.text == button_end:
++        return message_end(update=update,context=context)
++    if update.message.text == button_start_again:  # запуск переводчика
++        update.message.reply_text(text='Введите слово', reply_markup=ReplyKeyboardRemove())
++        return "message stop"
++    if update.message.text==button_anketa:
++        return anketa_start(update=update,context=context)
++    if update.message.text==button_start:
++        update.message.reply_text(text='Введите слово', reply_markup=ReplyKeyboardRemove())
++        return "message stop"
++    if update.message.text==button_menu:
++        update.message.reply_text(text='Вы сейчас в главном меню\nВыберете одну из команд',reply_makup=my_keyboard)
++        return"spisok comand"
++
++
++
++
++
++def anketa_start(update: Update, context: CallbackContext):
+     update.message.reply_text(
+-        text="Я знаю пока три команды:'перевод', '/help', '/end'",
+-        reply_markup=my_keyboard
++        text='Давай заполним твою анкету о знание англисского языка!\nСначала тебе надо будет указать:\n-ФИО \n-номер телефона\n-почту\n-уровень знания языка\n-небольшой комментарий',
++        reply_markup=ReplyKeyboardRemove())
++    update.message.reply_text(text='Введите пожалуйста фамилию,имя,отчество')
++
++    return "name"
++
++
++def anketa_name(update: Update, context: CallbackContext):
++    global full_name
++    full_name = update.message.text
++    update.message.reply_text(text='Введите номер телефона')
++    return "phone"
++
++
++def anketa_phone(update: Update, context: CallbackContext):
++    global phone_number
++    phone_number = update.message.text
++    update.message.reply_text(text='Введите электронную почту')
++    return "email"
++
++
++def anketa_mail(update: Update, context: CallbackContext):
++    global mail_name
++    mail_name = update.message.text
++    my_keyboard = ReplyKeyboardMarkup(
++        [['A1-Beginner,Elementary'], ['A2-Pre-Intermediate'], ['B1-Intermediate'], ['B2-Upper-Intermediate'],
++         ['C1-Advanced'], ['C2-Proficiency']])
++    update.message.reply_text(
++        text='Выберете один из уровней знания английского языка\nA1-Beginner,Elementary\nA2-Pre-Intermediate\nB1-Intermediate\nB2-Upper-Intermediate\nC1-Advanced\nC2-Proficiency',
++        reply_markup=my_keyboard)
++    return "level"
++
++
++def anketa_level(update: Update, context: CallbackContext):
++    global level
++    level = update.message.text
++    update.message.reply_text(text='Напишите небольшой комментарий(по желанию)',reply_markup=ReplyKeyboardRemove())
++    return "anketa end"
++
++
++
++def anketa_end(update: Update, context: CallbackContext):
++    global comment
++    comment = update.message.text
++    my_keyboard=ReplyKeyboardMarkup([[button_start_again,button_anketa],[button_end,button_menu],[button_help,show_anketa]])
++    update.message.reply_text(
++        text='Спасибо что заполнили анкету,теперь мы узнаем о вас побольше\nТеперь вы можете увидеть вашу анкету либо выйти в главное меню!',reply_markup=my_keyboard)
++    return "spisok comand"
++
++
++
++def anketa_text(update:Update,context:CallbackContext):
++    my_keyboard=ReplyKeyboardMarkup([[button_start,button_anketa],[button_end,button_menu],[button_help,show_anketa]])
++    update.message.reply_text(text='Ваша анкета:\nФИО:%s\nНомер телефона:%s\nЭлектронная почта:%s\nУровень языка:%s\nКомментарий:%s\n' % (full_name, phone_number, mail_name, level, comment),
++            reply_markup=my_keyboard
+     )
++    return"spisok comand"
++
+ 
+ 
+-def main():
++
++def main():  # Основные параметры бота(токен,обработчики сообщений и команд,и обработчик определенного диалога
+     print('Бот запущен')
+     updater = Updater(
+         token='1393900687:AAFRG_hsPUBotc3VJF8Zsevz9iehRh-PDIY',
+         use_context=True,
+     )
+-    updater.dispatcher.add_handler(MessageHandler(Filters.regex('start|/start|привет|Привет|Start'),message_handler))
+-    updater.dispatcher.add_handler(MessageHandler(Filters.regex('/help'), message_help))
+-    updater.dispatcher.add_handler(MessageHandler(Filters.regex('/end'), message_end))
+-    updater.dispatcher.add_handler(
+-        ConversationHandler(entry_points=[MessageHandler(Filters.regex('/translate'), main_part)],
++    start_handler=updater.dispatcher.add_handler(  # диалог где будут переводиться слова
++        ConversationHandler(entry_points=[CommandHandler('start',message_handler)],
+                             states={
+-                                "stop":[MessageHandler(Filters.all,message_stop)],
+-                                "menu":[MessageHandler(Filters.all,message_handler)]
++                                "translator":[MessageHandler(Filters.regex('/translate'), main_part)],
++                                "message stop": [MessageHandler(Filters.all, message_stop)],
++                                "spisok comand": [MessageHandler(Filters.regex('/translate_again|/help|/end|/menu|/Заполнить анкету|Показать анкету|/translate'), spisok_comand)],
++                                "anketa":[MessageHandler(Filters.regex('/Заполнить анкету'), anketa_start)],
++                                "name": [MessageHandler(Filters.text, anketa_name)],
++                                "phone": [MessageHandler(Filters.text, anketa_phone)],
++                                "email": [MessageHandler(Filters.text, anketa_mail)],
++                                "level": [MessageHandler(Filters.regex('A1-Beginner,Elementary|A2-Pre-Intermediate|B1-Intermediate|B2-Upper-Intermediate|C1-Advanced|C2-Proficiency'),anketa_level)],
++                                "anketa end": [MessageHandler(Filters.text, anketa_end)],
++
+                             },
+-                            fallbacks=[MessageHandler(Filters.regex('/translate'), main_part)]
++                            fallbacks=[MessageHandler(Filters.text|Filters.video|Filters.document|Filters.photo,dontknow)]
+                             )
+     )
+     updater.start_polling()
