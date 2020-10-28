@@ -91,11 +91,12 @@ def translator_handler(update:Update,context:CallbackContext):
     slovo=update.message.text
     translator=Translator()
     perevod=translator.translate(slovo,src=src,dest=dest)
-    update.message.reply_text(text="Перевод: %s-%s"%(slovo,perevod.text))
     if src=="ja":
         result = mdb.update_one({"_id":id},{"$push":{"translator.ru_words":perevod.text,"translator.ja_words":slovo}})
+        update.message.reply_text(text="Перевод: %s-%s" % (slovo, perevod.text))
     if src=="ru":
         result = mdb.update_one({"_id": id},{"$push": {"translator.ru_words": slovo,"translator.ja_words":perevod.text}})
+        update.message.reply_text(text="Перевод: %s-%s\nПроизношение: %s" % (slovo, perevod.text,perevod.pronunciation))
     update.message.reply_text(text="Выберите действие", reply_markup=translator_keyboard)
     return "handler"
 
